@@ -1,0 +1,194 @@
+<?php defined('IN_CMS') or die(); if(!defined('IN_CMS')) exit;?><!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="renderer" content="webkit">
+<title>设置分组</title>
+<link rel="stylesheet" href="<?php echo WEB_ROOT;?>public/css/ui.css">
+<link rel="stylesheet" href="<?php echo WEB_ROOT;?>public/admin/css/layout.css">
+<script src="<?php echo WEB_ROOT;?>public/js/jquery.js"></script>
+<script src="<?php echo WEB_ROOT;?>public/js/ui.js"></script>
+</head>
+<body class="ui-bg-white">
+    <div class="ui-pl ui-pr ui-pt">
+        <a href="javascript:;" class="add-iframe ui-btn ui-btn-info">添加分组</a>
+        <form method="post" class="ui-form">
+        <table class="ui-table ui-table-border ui-table-hover ui-table-striped ui-mb ui-mt">
+            <thead class="ui-thead-gray">
+                <tr>
+                    <th width="100">排序</th>
+                    <th>分组名称</th>
+                    <th width="80">状态</th>
+                    <th width="120">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php $array_rs=$this->db->load("select * from cms_file_group  where 1=1   order by ordnum,aid ",0,false,0);$total_rs=count($array_rs);if($total_rs==0){ ?>
+<?php } else{ ?>
+<?php $i=0;} foreach($array_rs as $rs){ $i++;?>
+            <tr>
+                <td><input type="hidden" name="mid[]" value="<?php echo $rs['aid'];?>"><input type="text" class="ui-form-ip" name="ordnum[]" id="ordnum_<?php echo $rs['aid'];?>" value="<?php echo $rs['ordnum'];?>" data-rule="required;int;"></td>
+                <td class="ui-text-left"><?php echo $rs['gname'];?></td>
+                <td><label class="ui-switch ui-switch-info"><input type="checkbox" <?php if ($rs['isshow']==1) { ?> checked<?php }?> data-url="<?php echo U('switchs','id='.$rs['aid'].'');?>"><span class="ui-switch-checkbox ui-switch-text"></span></label></td>
+                <td><a href="javascript:;" data-url="<?php echo U('editgroup',"id=".$rs['aid']."");?>" class="edit-iframe"><span class="ui-icon-edit"></span> 编辑</a>　<a href="javascript:;" class="del" data-url="<?php echo U('delgroup','id='.$rs['aid'].'');?>"><span class="ui-icon-delete"></span> 删除</a></td>
+            </tr>
+            <?php } if($total_rs>0){ ?>
+<?php }?>
+            </tbody>
+        </table>
+        <?php if ($total_rs>0) { ?><input type="hidden" name="token" value="<?php echo $token;?>"><button type="submit" class="ui-btn ui-btn-yellow">保存排序</button><?php }?>
+        </form>
+    </div>
+<script>
+$(function()
+{
+    $('.ui-switch input[type=checkbox]').on('click',function()
+	{
+		var url=$(this).attr("data-url");
+		var result=($(this).is(':checked'))?1:0;
+		$.ajax(
+		{
+			url:url,
+			type:"post",
+			dataType:'json',
+			data:"token=<?php echo $token;?>&isshow="+result,
+			error:function(e){alert(e.responseText);},
+			success:function(d)
+			{
+				if(d.state=='success')
+				{
+					sdcms.success(d.msg);
+				}
+				else
+				{
+					sdcms.error(d.msg);
+				}
+			}
+		});
+	});
+	$(".add-iframe").click(function()
+	{
+		$.dialogbox(
+		{
+			title:"添加分组",
+			inputval:"",
+			inputholder:"请输入分组名称",
+			type:1,
+			ok:function(e)
+			{
+				var val=e.inputval();
+				if(val=='')
+				{
+					sdcms.error("分组名称不能为空");
+				}
+				else
+				{
+					$.ajax(
+					{
+						url:'<?php echo U("addgroup");?>',
+						type:'post',
+						dataType:'json',
+						data:"token=<?php echo $token;?>&name="+encodeURIComponent(val),
+						success:function(d)
+						{
+							if(d.state=='success')
+							{
+								sdcms.success(d.msg);
+								setTimeout(function(){location.href='<?php echo THIS_LOCAL;?>';},1000);
+							}
+							else
+							{
+								sdcms.error(d.msg);
+							}
+						}
+					});
+				}
+			}
+		});
+	});
+	$(".edit-iframe").click(function()
+	{
+		var url=$(this).attr("data-url");
+		$.dialogbox(
+		{
+			title:"编辑分组",
+			text:url,
+			width:'500px',
+			height:'260px',
+			type:3,
+			oktheme:'ui-btn-info',
+			ok:function(e)
+			{
+				e.iframe().contents().find("#sdcms-submit").click();
+			},
+			cancel:function(){location.href=location.href;}
+		});
+	});
+	$(".ui-form").form(
+	{
+		type:2,
+		result:function(form)
+		{
+			$.ajax(
+			{
+                type:'post',
+                cache:false,
+                dataType:'json',
+                url:'<?php echo THIS_LOCAL;?>',
+                data:$(form).serialize(),
+                error:function(e){alert(e.responseText);},
+                success:function(d)
+                {
+                    if(d.state=='success')
+                    {
+                        sdcms.success(d.msg);
+                        setTimeout(function(){location.href='<?php echo THIS_LOCAL;?>';},1500);
+                    }
+                    else
+                    {
+                        sdcms.error(d.msg);
+                    }
+                }
+            });
+		}
+	});
+    $(".del").click(function()
+	{
+		var url=$(this).attr("data-url");
+		$.dialog(
+		{
+			title:"操作提示",
+			text:"确定要删除？不可恢复！",
+			oktheme:'ui-btn-info',
+			ok:function(e)
+			{
+				$.ajax(
+				{
+                    url:url,
+					type:'post',
+					dataType:'json',
+					data:'token=<?php echo $token;?>',
+					error:function(e){alert(e.responseText);},
+                    success:function(d)
+                    {
+                        e.close();
+                        if(d.state=='success')
+                        {
+                            sdcms.success(d.msg);
+                            setTimeout(function(){location.href='<?php echo THIS_LOCAL;?>';},1000);
+                        }
+                        else
+                        {
+                            sdcms.error(d.msg);
+                        }
+                    }
+                });
+			}
+		});
+    });
+})
+</script>
+</body>
+</html>

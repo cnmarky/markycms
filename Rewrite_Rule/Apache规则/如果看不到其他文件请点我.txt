@@ -1,0 +1,12 @@
+部分客户反映Mac电脑看不到【.htaccess】文件，如果您看不到，请自行新建此文件，文件中的代码如下：
+
+
+
+<IfModule mod_rewrite.c>
+  Options +FollowSymlinks
+  RewriteEngine On
+
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^(.*)$ index.php/$1 [QSA,PT,L]
+</IfModule>
